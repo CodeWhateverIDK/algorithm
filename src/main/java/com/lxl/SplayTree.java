@@ -10,21 +10,17 @@ import java.util.Queue;
 public class SplayTree {
     public static void main(String[] args) {
         SplayTree tree = new SplayTree();
-        tree.insert(10);
-        tree.insert(20);
-        tree.insert(5);
-        tree.insert(15);
 
-        System.out.println("After insertions:");
+        tree.insert(100);
+        tree.insert(50);
+        tree.insert(75);
+
+        System.out.println("Before splay(75):");
         tree.printTree();
 
-        SplayTree.Node node15 = tree.search(tree.root, 15);
-        if (node15 != null) tree.splay(node15);
-        System.out.println("After splaying 15:");
-        tree.printTree();
+        tree.splay(tree.search(tree.root, 75));
 
-        tree.remove(10);
-        System.out.println("After removing 10:");
+        System.out.println("After splay(75):");
         tree.printTree();
     }
     // In SplayTree.java
@@ -36,7 +32,7 @@ public class SplayTree {
         if (node == null) return;
         printTree(node.r, depth + 1);
         for (int i = 0; i < depth; i++) System.out.print("    ");
-        System.out.println(node.v);
+        System.out.println(node.v + (node == root ? " (root)" : ""));
         printTree(node.l, depth + 1);
     }
 
@@ -60,7 +56,11 @@ public class SplayTree {
         }
         x.p = p.p;
         if (p.p != null) {
-            p.p.r = x;
+            if (p.p.r == p) {
+                p.p.r = x;
+            } else {
+                p.p.l = x;
+            }
         }
         p.p = x;
         x.r = p;
@@ -74,7 +74,11 @@ public class SplayTree {
         }
         x.p = p.p;
         if (p.p != null) {
-            p.p.l = x;
+            if (p.p.l == p) {
+                p.p.l = x;
+            } else {
+                p.p.r = x;
+            }
         }
         p.p = x;
         x.l = p;
