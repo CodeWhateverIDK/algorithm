@@ -8,35 +8,8 @@ import java.util.Queue;
  * @since 2025/07/08 16:40
  */
 public class SplayTree {
-    public static void main(String[] args) {
-        SplayTree tree = new SplayTree();
 
-        tree.insert(100);
-        tree.insert(50);
-        tree.insert(75);
 
-        System.out.println("Before splay(75):");
-        tree.printTree();
-
-        tree.splay(tree.search(tree.root, 75));
-
-        System.out.println("After splay(75):");
-        tree.printTree();
-    }
-    // In SplayTree.java
-    public void printTree() {
-        printTree(root, 0);
-    }
-
-    private void printTree(Node node, int depth) {
-        if (node == null) return;
-        printTree(node.r, depth + 1);
-        for (int i = 0; i < depth; i++) System.out.print("    ");
-        System.out.println(node.v + (node == root ? " (root)" : ""));
-        printTree(node.l, depth + 1);
-    }
-
-    private Node root;
 
     class Node {
         int v;
@@ -48,125 +21,123 @@ public class SplayTree {
         }
     }
 
-    public void zig(Node x) {
-        Node p = x.p;
-        p.l = x.r;
-        if (x.r != null) {
-            x.r.p = p;
+    public Node zig(Node root) {
+        Node l = root.l;
+        root.l = l.r;
+        if (root.l != null) {
+            root.l.p = root;
         }
-        x.p = p.p;
-        if (p.p != null) {
-            if (p.p.r == p) {
-                p.p.r = x;
-            } else {
-                p.p.l = x;
-            }
-        }
-        p.p = x;
-        x.r = p;
+        l.p = root.p;
+        root.p = l;
+        l.r = root;
+        return l;
     }
 
-    public void zag(Node x) {
-        Node p = x.p;
-        p.r = x.l;
-        if (x.l != null) {
-            x.l.p = p;
+    public Node zag(Node root) {
+        Node r = root.r;
+        root.r = r.l;
+        if (root.r != null) {
+            root.r.p = root;
         }
-        x.p = p.p;
-        if (p.p != null) {
-            if (p.p.l == p) {
-                p.p.l = x;
-            } else {
-                p.p.r = x;
-            }
-        }
-        p.p = x;
-        x.l = p;
+        r.p = root.p;
+        root.p = r;
+        r.l = root;
+        return r;
     }
 
-    public void splay(Node x) {
-        while (x.p != null) {
-            Node p = x.p;
-            if (p.l == x) {
-                if (p.p != null && p.p.l == p) {
-                    zig(p);
+    public Node splay(Node root, int v) {
+        if (root == null || root.v == v) {
+            return root;
+        }
+
+        if (root.v > v) {
+            if (root.l == null) {
+                return root;
+            }
+            if (root.l.v > v && root.l.l != null) {
+                root.l.l = splay(root.l.l, v);
+                root = zig(root);
+            } else if (root.l.v < v && root.l.r != null) {
+                root.l.r = splay(root.l.r, v);
+                if (root.l.r != null) {
+                    root.l = zag(root.l);
                 }
-                zig(x);
-            } else {
-                if (p.p != null && p.p.r == p) {
-                    zag(p);
-                }
-                zag(x);
             }
+            return root.l == null ? root : zig(root);
+        } else {
+            if (root.r == null) {
+                return root;
+            }
+            if (root.r.v < v && root.r.r != null) {
+                root.r.r = splay(root.r.r, v);
+                root = zag(root);
+            } else if (root.r.v > v && root.r.l != null) {
+                root.r.l = splay(root.r.l, v);
+                if (root.r.l != null) {
+                    root.r = zig(root.r);
+                }
+            }
+            return root.r == null ? root : zag(root);
         }
-        root = x;
     }
 
-    public Node search(Node root, int v) {
-        while (root != null && root.v != v) {
-            if (v < root.v) {
-                root = root.l;
-            } else {
-                root = root.r;
+    public Node insert(Node root, int v) {
+        Node x = new Node(v);
+        if (root == null) {
+            return x;
+        }
+        Node splay = splay(root, v);
+        if (splay.v == v) {
+            return splay;
+        } else if (splay.v > v) {
+            x.r = splay;
+            splay.p = x;
+            x.l = splay.l;
+            if (x.l != null) {
+                x.l.p = x;
             }
+            splay.l = null;
+        } else {
+            x.l = splay;
+            splay.p = x;
+            x.r = splay.r;
+            if (x.r != null) {
+                x.r.p = x;
+            }
+            splay.r = null;
+        }
+        return x;
+    }
+
+    public Node pre(Node root, int v) {
+        if (root == null || root.l == null) {
+            return root;
+        }
+        root = root.l;
+        while (root.r != null) {
+            root = root.r;
         }
         return root;
     }
 
-    public void insert(int v) {
+    public Node remove(Node root, int v) {
         if (root == null) {
-            root = new Node(v);
-            return;
+            return root;
         }
-        Node newNode = new Node(v);
-        Node c = root;
-        Node p = root.p;
-        while (c != null) {
-            p = c;
-            if (v < c.v) {
-                c = c.l;
-            } else if (v > c.v) {
-                c = c.r;
-            } else {
-                return;
+        root = splay(root, v);
+        if (root.v != v) {
+            return root;
+        } else if (root.l == null) {
+            if (root.r != null) {
+                root.r.p = null;
             }
+            return root.r;
         }
-        newNode.p = p;
-        if (v < p.v) {
-            p.l = newNode;
-        } else {
-            p.r = newNode;
-        }
-    }
-
-    public Node pre(int v) {
-        splay(search(root, v));
-        Node pre = root.l;
-        if (pre == null) {
-            return null;
-        }
-        while (pre.r != null) {
-            pre = pre.r;
+        Node pre = splay(root, pre(root, v).v);
+        pre.r = root.r;
+        if (root.r != null) {
+            root.r.p = pre;
         }
         return pre;
-    }
-
-    public void remove(int v) {
-        Node x = search(root, v);
-        Node pre = pre(v);
-        if (pre == null) {
-            splay(x);
-            root = x.r;
-            if (root != null) {
-                root.p = null;
-            }
-        } else {
-            splay(pre);
-            root = pre;
-            if (x.r != null) {
-                x.r.p = pre;
-            }
-            pre.r = x.r;
-        }
     }
 }
